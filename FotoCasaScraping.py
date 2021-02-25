@@ -1,6 +1,7 @@
 import argparse
 import json
 import time
+import chromedriver_autoinstaller
 from bs4 import BeautifulSoup
 from selenium import webdriver
 #from pwn import *
@@ -19,8 +20,8 @@ print(
 "-------------------------------------------------------------------------------------------------------------------------------------\n")
 
 # Global variables
-path = "/Users/pablochamorro/Downloads/chromedriver"
-driver = webdriver.Chrome(path)
+chromedriver_autoinstaller.install()
+driver = webdriver.Chrome()
 fotocasa_base_path = "https://www.fotocasa.es"
 outputFile = None
 proxy = None
@@ -28,7 +29,7 @@ proxy = None
 
 def initVariables(args):
 
-    # Relleno de variables
+    # Variables set up
     url = args.url
     outputFile = args.output
     proxy = args.proxy
@@ -78,7 +79,7 @@ def writeDataToFile(data_homes):
 def obtainLinks(url):
 
     driver.get(url)
-    time.sleep(3)
+    time.sleep(4)
 
     try:
         driver.find_element_by_css_selector("*[data-testid='TcfAccept']").click()
@@ -86,9 +87,9 @@ def obtainLinks(url):
         print("Button not found")
         driver.find_element_by_css_selector("*[data-testid='TcfAccept']")
 
-    listaEnlaces = set()
+    linksList = set()
 
-    # Obtenemos todas las viviendas
+    # Obtain all homes
     #p = log.progress("Homes")
     #p.status("Getting home links")
     time.sleep(0.5)
@@ -96,23 +97,23 @@ def obtainLinks(url):
     for i in range(1, 20):
         htmlText = driver.page_source
         soup = BeautifulSoup(htmlText, 'html.parser')
-        viviendas = soup.find_all('a', class_="re-Card-link")
-        for vivienda in viviendas:
-            if vivienda['href'] and vivienda["href"].startswith("/es/"):
-                listaEnlaces.add(vivienda['href'])
+        homes = soup.find_all('a', class_="re-Card-link")
+        for home in homes:
+            if home['href'] and home["href"].startswith("/es/"):
+                linksList.add(home['href'])
         ActionChains(driver).key_down(Keys.PAGE_DOWN).key_up(Keys.PAGE_DOWN).perform()
         time.sleep(0.5)
 
-    #p.success("%d links obtained", len(listaEnlaces))
+    #p.success("%d links obtained", len(linksList))
 
-    return listaEnlaces
+    return linksList
 
-def obtainDataHomes(listaEnlaces):
+def obtainDataHomes(linksList):
 
     #p = log.progress("Home")
     counter = 1
     data_homes = dict()
-    for link in listaEnlaces:
+    for link in linksList:
         #p.status("Obtain vivienda [%d] data" % counter)
         data_homes[counter] = obtainDatahome(link)
         counter += 1
@@ -129,8 +130,8 @@ def obtainDataHomes(listaEnlaces):
 def main(args):
 
     url = initVariables(args)
-    listaEnlaces = obtainLinks(url)
-    data_homes = obtainDataHomes(listaEnlaces)
+    linksList = obtainLinks(url)
+    data_homes = obtainDataHomes(linksList)
     driver.close()
     writeDataToFile(data_homes)
     time.sleep(2)
