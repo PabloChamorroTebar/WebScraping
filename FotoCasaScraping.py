@@ -23,7 +23,6 @@ print(
 chromedriver_autoinstaller.install()
 driver = webdriver.Chrome()
 fotocasa_base_path = "https://www.fotocasa.es"
-outputFile = None
 proxy = None
 
 
@@ -31,10 +30,13 @@ def initVariables(args):
 
     # Variables set up
     url = args.url
-    outputFile = args.output
+    if args.output:
+        outputFile = args.output
+    else:
+        outputFile = "data.json"
     proxy = args.proxy
 
-    return url
+    return url, outputFile
 
 
 def obtainDatahome(link):
@@ -65,21 +67,23 @@ def obtainDatahome(link):
 
     return data_home
 
-def writeDataToFile(data_homes):
+
+def writeDataToFile(data_homes,outputFile):
 
     #p = log.progress("Data")
 
     #p.status("Inserting data into %s file" % outputFile)
 
-    with open('data.txt', 'w') as outfile:
-        json.dump(data_homes, outfile)
+    with open(outputFile, 'w') as outfile:
+        json.dump(data_homes, outfile, ensure_ascii=False)
 
     #p.success("Insert data into %s file" % outputFile)
+
 
 def obtainLinks(url):
 
     driver.get(url)
-    time.sleep(4)
+    time.sleep(8)
 
     try:
         driver.find_element_by_css_selector("*[data-testid='TcfAccept']").click()
@@ -92,7 +96,7 @@ def obtainLinks(url):
     # Obtain all homes
     #p = log.progress("Homes")
     #p.status("Getting home links")
-    time.sleep(0.5)
+    #time.sleep(0.5)
 
     for i in range(1, 20):
         htmlText = driver.page_source
@@ -108,32 +112,30 @@ def obtainLinks(url):
 
     return linksList
 
+
 def obtainDataHomes(linksList):
 
     #p = log.progress("Home")
     counter = 1
-    data_homes = dict()
+    data_homes = []
     for link in linksList:
         #p.status("Obtain vivienda [%d] data" % counter)
-        data_homes[counter] = obtainDatahome(link)
+        data_homes.append(obtainDatahome(link))
         counter += 1
 
     #p.success("Homes data collected")
 
     return data_homes
 
-    p = log.progress("Data")
-
-    p.status("Inserting data into %s file" % outputFile)
-
 
 def main(args):
 
-    url = initVariables(args)
+    url,outputFile = initVariables(args)
+
     linksList = obtainLinks(url)
     data_homes = obtainDataHomes(linksList)
     driver.close()
-    writeDataToFile(data_homes)
+    writeDataToFile(data_homes, outputFile)
     time.sleep(2)
 
 
