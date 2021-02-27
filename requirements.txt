@@ -5,6 +5,7 @@ capstone==4.0.2
 certifi==2020.12.5
 cffi==1.14.5
 chardet==4.0.0
+chromedriver-autoinstaller==0.2.2
 cryptography==3.4.6
 idna==2.10
 intervaltree==3.1.0
