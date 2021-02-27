@@ -4,26 +4,40 @@ import time
 import chromedriver_autoinstaller
 from bs4 import BeautifulSoup
 from selenium import webdriver
+import random
 #from pwn import *
 
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.keys import Keys
 
-print(
-"-------------------------------------------------------------------------------------------------------------------------------------\n"
-"███████╗ ██████╗ ████████╗ ██████╗  ██████╗ █████╗ ███████╗ █████╗     ███████╗ ██████╗██████╗  █████╗ ██████╗ ██╗███╗   ██╗ ██████╗\n"+
-"██╔════╝██╔═══██╗╚══██╔══╝██╔═══██╗██╔════╝██╔══██╗██╔════╝██╔══██╗    ██╔════╝██╔════╝██╔══██╗██╔══██╗██╔══██╗██║████╗  ██║██╔════╝\n"+
-"█████╗  ██║   ██║   ██║   ██║   ██║██║     ███████║███████╗███████║    ███████╗██║     ██████╔╝███████║██████╔╝██║██╔██╗ ██║██║  ███╗\n"+
-"██╔══╝  ██║   ██║   ██║   ██║   ██║██║     ██╔══██║╚════██║██╔══██║    ╚════██║██║     ██╔══██╗██╔══██║██╔═══╝ ██║██║╚██╗██║██║   ██║\n"+
-"██║     ╚██████╔╝   ██║   ╚██████╔╝╚██████╗██║  ██║███████║██║  ██║    ███████║╚██████╗██║  ██║██║  ██║██║     ██║██║ ╚████║╚██████╔╝\n"+
-"╚═╝      ╚═════╝    ╚═╝    ╚═════╝  ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝    ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═══╝ ╚═════╝\n"
-"-------------------------------------------------------------------------------------------------------------------------------------\n")
 
-# Global variables
-chromedriver_autoinstaller.install()
-driver = webdriver.Chrome()
-fotocasa_base_path = "https://www.fotocasa.es"
-proxy = None
+def main(args):
+
+    print(
+        "-------------------------------------------------------------------------------------------------------------------------------------\n"
+        "███████╗ ██████╗ ████████╗ ██████╗  ██████╗ █████╗ ███████╗ █████╗     ███████╗ ██████╗██████╗  █████╗ ██████╗ ██╗███╗   ██╗ ██████╗\n" +
+        "██╔════╝██╔═══██╗╚══██╔══╝██╔═══██╗██╔════╝██╔══██╗██╔════╝██╔══██╗    ██╔════╝██╔════╝██╔══██╗██╔══██╗██╔══██╗██║████╗  ██║██╔════╝\n" +
+        "█████╗  ██║   ██║   ██║   ██║   ██║██║     ███████║███████╗███████║    ███████╗██║     ██████╔╝███████║██████╔╝██║██╔██╗ ██║██║  ███╗\n" +
+        "██╔══╝  ██║   ██║   ██║   ██║   ██║██║     ██╔══██║╚════██║██╔══██║    ╚════██║██║     ██╔══██╗██╔══██║██╔═══╝ ██║██║╚██╗██║██║   ██║\n" +
+        "██║     ╚██████╔╝   ██║   ╚██████╔╝╚██████╗██║  ██║███████║██║  ██║    ███████║╚██████╗██║  ██║██║  ██║██║     ██║██║ ╚████║╚██████╔╝\n" +
+        "╚═╝      ╚═════╝    ╚═╝    ╚═════╝  ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝    ╚══════╝ ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝╚═╝  ╚═══╝ ╚═════╝\n"
+        "-------------------------------------------------------------------------------------------------------------------------------------\n")
+
+
+    # Global variables
+    chromedriver_autoinstaller.install()
+    global driver
+    driver = webdriver.Chrome()
+    global fotocasa_base_path
+    fotocasa_base_path = "https://www.fotocasa.es"
+
+    url = initVariables(args)
+
+    linksList = obtainLinks(url)
+    data_homes = obtainDataHomes(linksList)
+    driver.close()
+    writeDataToFile(data_homes)
+    time.sleep(2)
 
 
 def initVariables(args):
@@ -36,48 +50,7 @@ def initVariables(args):
         outputFile = "data.json"
     proxy = args.proxy
 
-    return url, outputFile
-
-
-def obtainDatahome(link):
-
-    data_home = dict()
-    url = fotocasa_base_path + link
-    driver.get(url)
-    time.sleep(0.5)
-    htmlText = driver.page_source
-    soup = BeautifulSoup(htmlText, 'html.parser')
-    price = soup.find("span", class_="re-DetailHeader-price").text
-    rooms = soup.find_all("li", class_="re-DetailHeader-featuresItem")[0].find("span", class_=False).find(
-        "span").text
-    bathrooms = soup.find_all("li", class_="re-DetailHeader-featuresItem")[1].find("span", class_=False).find(
-        "span").text
-    house_size = soup.find_all("li", class_="re-DetailHeader-featuresItem")[2].find("span", class_=False).find(
-        "span").text
-    data_home["price"] = price
-    data_home["rooms"] = rooms
-    data_home["bathrooms"] = bathrooms
-    data_home["house_size"] = house_size
-    for feature in soup.find_all("div", class_="re-DetailFeaturesList-featureContent"):
-        data_home[feature.find("p", class_="re-DetailFeaturesList-featureLabel").text] = feature.find("p",
-                                                                                                      class_="re-DetailFeaturesList-featureValue").text
-
-    for extraFeature in soup.find_all("li", class_="re-DetailExtras-listItem"):
-        data_home[extraFeature.text] = True
-
-    return data_home
-
-
-def writeDataToFile(data_homes,outputFile):
-
-    #p = log.progress("Data")
-
-    #p.status("Inserting data into %s file" % outputFile)
-
-    with open(outputFile, 'w') as outfile:
-        json.dump(data_homes, outfile, ensure_ascii=False)
-
-    #p.success("Insert data into %s file" % outputFile)
+    return url
 
 
 def obtainLinks(url):
@@ -128,24 +101,42 @@ def obtainDataHomes(linksList):
     return data_homes
 
 
-def main(args):
+def obtainDatahome(link):
 
-    url,outputFile = initVariables(args)
+    data_home = dict()
+    url = fotocasa_base_path + link
+    driver.get(url)
+    time.sleep(0.5)
+    htmlText = driver.page_source
+    soup = BeautifulSoup(htmlText, 'html.parser')
+    price = soup.find("span", class_="re-DetailHeader-price").text.replace(" €", "").replace(".", "")
+    rooms = soup.find_all("li", class_="re-DetailHeader-featuresItem")[0].find("span", class_=False).find(
+        "span").text
+    bathrooms = soup.find_all("li", class_="re-DetailHeader-featuresItem")[1].find("span", class_=False).find(
+        "span").text
+    house_size = soup.find_all("li", class_="re-DetailHeader-featuresItem")[2].find("span", class_=False).find(
+        "span").text
+    data_home["price"] = int(price)
+    data_home["rooms"] = int(rooms)
+    data_home["bathrooms"] = int(bathrooms)
+    data_home["house_size"] = int(house_size)
+    for feature in soup.find_all("div", class_="re-DetailFeaturesList-featureContent"):
+        data_home[feature.find("p", class_="re-DetailFeaturesList-featureLabel").text] = feature.find("p",
+                                                                                                      class_="re-DetailFeaturesList-featureValue").text
 
-    linksList = obtainLinks(url)
-    data_homes = obtainDataHomes(linksList)
-    driver.close()
-    writeDataToFile(data_homes, outputFile)
-    time.sleep(2)
+    for extraFeature in soup.find_all("li", class_="re-DetailExtras-listItem"):
+        data_home[extraFeature.text] = True
+
+    return data_home
 
 
-if __name__ == "__main__":
+def writeDataToFile(data_homes):
 
-    parser = argparse.ArgumentParser(description='Scraping fotocasa web.')
-    parser.add_argument('url', type=str, help='Enter the url with filters apply')
-    parser.add_argument('--output', type=str, help="file with saved data (data.json by default)")
-    parser.add_argument('--proxy', type=str, help="proxy to jump blocking")
+    #p = log.progress("Data")
 
-    args = parser.parse_args()
+    #p.status("Inserting data into %s file" % outputFile)
 
-    main(args)
+    with open("data/data" + str(random.randint(100000000,999999999)) + ".json", 'w') as outfile:
+        json.dump(data_homes, outfile, ensure_ascii=False)
+
+    #p.success("Insert data into %s file" % outputFile)
