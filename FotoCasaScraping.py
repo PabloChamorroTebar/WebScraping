@@ -4,7 +4,9 @@ import time
 import chromedriver_autoinstaller
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from MatchingField import machingPpalFieldFotoCasa, machingAuxFieldFotoCasa, checkFotoCasaFieldFound
 import random
+import MatchingField
 
 from selenium.webdriver import ActionChains
 from selenium.webdriver.common.keys import Keys
@@ -43,10 +45,6 @@ def initVariables(args):
 
     # Variables set up
     url = args.url
-    if args.output:
-        outputFile = args.output
-    else:
-        outputFile = "data.json"
     proxy = args.proxy
 
     return url
@@ -108,23 +106,41 @@ def obtainDatahome(link):
         house_size = soup.find_all("li", class_="re-DetailHeader-featuresItem")[2].find("span", class_=False).find(
             "span").text
         location = soup.find("span", class_="re-Breadcrumb-text").text
-        for feature in soup.find_all("div", class_="re-DetailFeaturesList-featureContent"):
-            data_home[feature.find("p", class_="re-DetailFeaturesList-featureLabel").text] = feature.find("p",
-                                                                                                      class_="re-DetailFeaturesList-featureValue").text
-        for extraFeature in soup.find_all("li", class_="re-DetailExtras-listItem"):
-            data_home[extraFeature.text] = True
-    except: 
-        price = "N/A"
-        rooms = "N/A"
-        bathrooms = "N/A"
-        house_size = "N/A"
-        location = "N/A"
 
-    data_home["price"] = price
-    data_home["rooms"] = rooms
-    data_home["bathrooms"] = bathrooms
-    data_home["house_size"] = house_size
-    data_home["location"] = location
+
+        data_home["price"] = price
+        data_home["rooms"] = rooms
+        data_home["bathrooms"] = bathrooms
+        data_home["house_size"] = house_size
+        data_home["location"] = location
+
+        for feature in soup.find_all("div", class_="re-DetailFeaturesList-featureContent"):
+            #print(feature)
+            if feature.find("p", class_="re-DetailFeaturesList-featureLabel") is not None:
+                #print("Caracteristica %s y valor %s" %  (feature.find("p", class_="re-DetailFeaturesList-featureLabel").text, feature.find("p",class_="re-DetailFeaturesList-featureValue").text) )
+                field = machingPpalFieldFotoCasa(feature.find("p", class_="re-DetailFeaturesList-featureLabel").text,
+                                     feature.find("p",class_="re-DetailFeaturesList-featureValue").text)
+                if field is not None:
+                    data_home[field[0]] = field[1]
+
+        for extraFeature in soup.find_all("li", class_="re-DetailExtras-listItem"):
+            #print("Field %s" % extraFeature.text)
+            field = machingAuxFieldFotoCasa(extraFeature.text)
+            if field is not None:
+                data_home[field[0]] = field[1]
+
+        data_home = checkFotoCasaFieldFound(data_home)
+
+    except Exception as ex:
+        print(ex)
+        print("[ERROR]: Piso %s con html distinto" % fotocasa_base_path + link)
+        data_home["price"] = "N/A"
+        data_home["rooms"] = "N/A"
+        data_home["house_size"] = "N/A"
+        data_home["location"] = "N/A"
+        data_home["type"] = "N/A"
+
+
 
     return data_home
 
